@@ -38,6 +38,8 @@ type NetworkProfileSpec struct {
 	// Port where API server of will be exposed
 	//+kubebuilder:default=6443
 	Port int32 `json:"port,omitempty"`
+	// NodePort is the port of the NodePort service, if NodePort Service type is used. If not set, it defaults to the Port.
+	NodePort *int32 `json:"nodePort,omitempty"`
 	// CertSANs sets extra Subject Alternative Names (SANs) for the API Server signing certificate.
 	// Use this field to add additional hostnames when exposing the Tenant Control Plane with third solutions.
 	CertSANs []string `json:"certSANs,omitempty"`
@@ -177,6 +179,9 @@ type DeploymentSpec struct {
 	//+kubebuilder:default="default"
 	// ServiceAccountName allows to specify the service account to be mounted to the pods of the Control plane deployment
 	ServiceAccountName string `json:"serviceAccountName,omitempty"`
+	// HostNetwork allows to configure whether the host linux network namespace should be used for the Control Plane
+	// deployment.
+	HostNetwork *bool `json:"hostNetwork,omitempty"`
 }
 
 // AdditionalVolumeMounts allows mounting additional volumes to the Control Plane components.
@@ -275,6 +280,7 @@ type AddonsSpec struct {
 // +kubebuilder:validation:XValidation:rule="!has(self.networkProfile.loadBalancerSourceRanges) || (size(self.networkProfile.loadBalancerSourceRanges) == 0 || self.controlPlane.service.serviceType == 'LoadBalancer')", message="LoadBalancer source ranges are supported only with LoadBalancer service type"
 // +kubebuilder:validation:XValidation:rule="!has(self.networkProfile.loadBalancerClass) || self.controlPlane.service.serviceType == 'LoadBalancer'", message="LoadBalancerClass is supported only with LoadBalancer service type"
 // +kubebuilder:validation:XValidation:rule="oldSelf.controlPlane.service.serviceType != 'LoadBalancer' || (oldSelf.controlPlane.service.serviceType == 'LoadBalancer' && self.controlPlane.service.serviceType == 'LoadBalancer' && (has(oldSelf.networkProfile.loadBalancerClass) && has(self.networkProfile.loadBalancerClass) || !has(oldSelf.networkProfile.loadBalancerClass) && has(self.networkProfile.loadBalancerClass)))",message="LoadBalancerClass can not be unset"
+// +kubebuilder:validation:XValidation:rule="!has(self.networkProfile.nodePort) || self.controlPlane.service.serviceType == 'NodePort'",message="can be set only if serviceType=NodePort"
 
 type TenantControlPlaneSpec struct {
 	// DataStore specifies the DataStore that should be used to store the Kubernetes data for the given Tenant Control Plane.

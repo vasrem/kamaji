@@ -55,7 +55,12 @@ func (r *KubernetesServiceResource) UpdateTenantControlPlaneStatus(ctx context.C
 
 		return err
 	}
-	tenantControlPlane.Status.ControlPlaneEndpoint = net.JoinHostPort(address, strconv.FormatInt(int64(tenantControlPlane.Spec.NetworkProfile.Port), 10))
+
+	port := tenantControlPlane.Spec.NetworkProfile.Port
+	if tenantControlPlane.Spec.NetworkProfile.NodePort != nil {
+		port = *tenantControlPlane.Spec.NetworkProfile.NodePort
+	}
+	tenantControlPlane.Status.ControlPlaneEndpoint = net.JoinHostPort(address, strconv.FormatInt(int64(port), 10))
 
 	return nil
 }
@@ -117,6 +122,9 @@ func (r *KubernetesServiceResource) mutate(ctx context.Context, tenantControlPla
 		case kamajiv1alpha1.ServiceTypeNodePort:
 			r.resource.Spec.Type = corev1.ServiceTypeNodePort
 			r.resource.Spec.Ports[0].NodePort = tenantControlPlane.Spec.NetworkProfile.Port
+			if tenantControlPlane.Spec.NetworkProfile.NodePort != nil {
+				r.resource.Spec.Ports[0].NodePort = *tenantControlPlane.Spec.NetworkProfile.NodePort
+			}
 
 			if tenantControlPlane.Spec.NetworkProfile.AllowAddressAsExternalIP && len(address) > 0 {
 				r.resource.Spec.ExternalIPs = []string{address}

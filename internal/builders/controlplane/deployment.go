@@ -69,6 +69,7 @@ func (d Deployment) Build(ctx context.Context, deployment *appsv1.Deployment, te
 	d.setNodeSelector(&deployment.Spec.Template.Spec, tenantControlPlane)
 	d.setToleration(&deployment.Spec.Template.Spec, tenantControlPlane)
 	d.setAffinity(&deployment.Spec.Template.Spec, tenantControlPlane)
+	d.setHostNetwork(&deployment.Spec.Template.Spec, tenantControlPlane)
 	d.setStrategy(&deployment.Spec, tenantControlPlane)
 	d.setSelector(&deployment.Spec, tenantControlPlane)
 	d.setTopologySpreadConstraints(&deployment.Spec, tenantControlPlane.Spec.ControlPlane.Deployment.TopologySpreadConstraints)
@@ -82,6 +83,12 @@ func (d Deployment) Build(ctx context.Context, deployment *appsv1.Deployment, te
 	d.setVolumes(&deployment.Spec.Template.Spec, tenantControlPlane)
 	d.setServiceAccount(&deployment.Spec.Template.Spec, tenantControlPlane)
 	d.Client.Scheme().Default(deployment)
+}
+
+func (d Deployment) setHostNetwork(podSpec *corev1.PodSpec, tcp kamajiv1alpha1.TenantControlPlane) {
+	if tcp.Spec.ControlPlane.Deployment.HostNetwork != nil {
+		podSpec.HostNetwork = *tcp.Spec.ControlPlane.Deployment.HostNetwork
+	}
 }
 
 func (d Deployment) setContainers(podSpec *corev1.PodSpec, tcp kamajiv1alpha1.TenantControlPlane, address string) {
